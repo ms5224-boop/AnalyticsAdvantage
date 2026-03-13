@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Direct Marketing Analytics Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3250;
+      --accent: #6366f1;
+      --accent2: #22d3ee;
+      --accent3: #f59e0b;
+      --accent4: #34d399;
+      --accent5: #f87171;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .header-left h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #6366f1, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header-left p {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-top: 4px;
+    }
+    .badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* ── KPI Cards ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .kpi-card.c1::before { background: linear-gradient(90deg, #6366f1, #818cf8); }
+    .kpi-card.c2::before { background: linear-gradient(90deg, #22d3ee, #67e8f9); }
+    .kpi-card.c3::before { background: linear-gradient(90deg, #f59e0b, #fcd34d); }
+    .kpi-card.c4::before { background: linear-gradient(90deg, #34d399, #6ee7b7); }
+    .kpi-card.c5::before { background: linear-gradient(90deg, #f87171, #fca5a5); }
+
+    .kpi-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+    .kpi-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .kpi-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .kpi-icon {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 2rem;
+      opacity: 0.12;
+    }
+
+    /* ── Chart Grid ── */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .span-6  { grid-column: span 6; }
+    .span-4  { grid-column: span 4; }
+    .span-8  { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    @media (max-width: 960px) {
+      .span-6, .span-4, .span-8 { grid-column: span 12; }
+    }
+    @media (max-width: 600px) {
+      .span-12 { grid-column: span 12; }
+    }
+
+    .chart-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .chart-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .chart-wrap {
+      position: relative;
+    }
+
+    /* ── Insights ── */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .insight-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .insight-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .insight-icon.green  { background: rgba(52,211,153,0.15); color: #34d399; }
+    .insight-icon.blue   { background: rgba(99,102,241,0.15); color: #6366f1; }
+    .insight-icon.yellow { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .insight-icon.red    { background: rgba(248,113,113,0.15); color: #f87171; }
+    .insight-icon.cyan   { background: rgba(34,211,238,0.15); color: #22d3ee; }
+
+    .insight-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .insight-body {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ── Segment Table ── */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+    thead th {
+      text-align: left;
+      padding: 10px 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 0.7rem;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+    tbody td { padding: 10px 12px; }
+    .pill {
+      display: inline-block;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .pill.high   { background: rgba(52,211,153,0.15); color: #34d399; }
+    .pill.medium { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .pill.low    { background: rgba(248,113,113,0.15); color: #f87171; }
+
+    .bar-bg {
+      background: var(--border);
+      border-radius: 4px;
+      height: 6px;
+      width: 100%;
+      margin-top: 4px;
+    }
+    .bar-fill {
+      height: 6px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #6366f1, #22d3ee);
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─────────────── Header ─────────────── -->
+<div class="header">
+  <div class="header-left">
+    <h1>Direct Marketing Analytics</h1>
+    <p>Customer spending behaviour across 1,000 records &mdash; key drivers, segments &amp; actionable insights</p>
+  </div>
+  <span class="badge">Dataset: direct_marketing.csv &nbsp;|&nbsp; n = 1,000</span>
+</div>
+
+<!-- ─────────────── KPI Cards ─────────────── -->
+<div class="kpi-grid">
+  <div class="kpi-card c1">
+    <div class="kpi-label">Total Revenue</div>
+    <div class="kpi-value">$1.217M</div>
+    <div class="kpi-sub">across all customers</div>
+    <div class="kpi-icon">💰</div>
+  </div>
+  <div class="kpi-card c2">
+    <div class="kpi-label">Avg. Amount Spent</div>
+    <div class="kpi-value">$1,217</div>
+    <div class="kpi-sub">Median: $962</div>
+    <div class="kpi-icon">📊</div>
+  </div>
+  <div class="kpi-card c3">
+    <div class="kpi-label">Avg. Customer Salary</div>
+    <div class="kpi-value">$56,104</div>
+    <div class="kpi-sub">Range: $10,100 – $168,800</div>
+    <div class="kpi-icon">💼</div>
+  </div>
+  <div class="kpi-card c4">
+    <div class="kpi-label">High-Value Customers</div>
+    <div class="kpi-value">181</div>
+    <div class="kpi-sub">Spend ≥ $2,000 (18.1%)</div>
+    <div class="kpi-icon">⭐</div>
+  </div>
+  <div class="kpi-card c5">
+    <div class="kpi-label">Spending Range</div>
+    <div class="kpi-value">$38–$6,217</div>
+    <div class="kpi-sub">Wide dispersion across segments</div>
+    <div class="kpi-icon">📈</div>
+  </div>
+</div>
+
+<!-- ─────────────── Row 1: Spending Dist + Age ─────────────── -->
+<div class="chart-grid">
+
+  <div class="chart-card span-8">
+    <div class="chart-title">Spending Distribution</div>
+    <div class="chart-sub">Number of customers in each spending tier</div>
+    <div class="chart-wrap"><canvas id="spendDist" height="90"></canvas></div>
+  </div>
+
+  <div class="chart-card span-4">
+    <div class="chart-title">Customers by Age Group</div>
+    <div class="chart-sub">Proportional breakdown</div>
+    <div class="chart-wrap"><canvas id="agePie" height="160"></canvas></div>
+  </div>
+
+  <!-- Row 2 -->
+  <div class="chart-card span-6">
+    <div class="chart-title">Avg. Spend by Age Group</div>
+    <div class="chart-sub">Middle-aged customers are top spenders</div>
+    <div class="chart-wrap"><canvas id="ageSpend" height="130"></canvas></div>
+  </div>
+
+  <div class="chart-card span-6">
+    <div class="chart-title">Avg. Spend by Purchase History</div>
+    <div class="chart-sub">Past behaviour is the strongest predictor</div>
+    <div class="chart-wrap"><canvas id="historySpend" height="130"></canvas></div>
+  </div>
+
+  <!-- Row 3 -->
+  <div class="chart-card span-6">
+    <div class="chart-title">Avg. Spend by Number of Catalogs</div>
+    <div class="chart-sub">More catalogs sent → significantly higher spend</div>
+    <div class="chart-wrap"><canvas id="catalogSpend" height="130"></canvas></div>
+  </div>
+
+  <div class="chart-card span-6">
+    <div class="chart-title">Salary Bracket vs. Avg. Spend</div>
+    <div class="chart-sub">Strong positive relationship between income and spending</div>
+    <div class="chart-wrap"><canvas id="salarySpend" height="130"></canvas></div>
+  </div>
+
+  <!-- Row 4 -->
+  <div class="chart-card span-4">
+    <div class="chart-title">Spend by Gender</div>
+    <div class="chart-sub">Avg. amount spent</div>
+    <div class="chart-wrap"><canvas id="genderSpend" height="160"></canvas></div>
+  </div>
+
+  <div class="chart-card span-4">
+    <div class="chart-title">Spend by Marital Status</div>
+    <div class="chart-sub">Avg. amount spent</div>
+    <div class="chart-wrap"><canvas id="marriedSpend" height="160"></canvas></div>
+  </div>
+
+  <div class="chart-card span-4">
+    <div class="chart-title">Spend by Home Ownership</div>
+    <div class="chart-sub">Avg. amount spent</div>
+    <div class="chart-wrap"><canvas id="homeSpend" height="160"></canvas></div>
+  </div>
+
+  <!-- Row 5: Children -->
+  <div class="chart-card span-12">
+    <div class="chart-title">Avg. Spend by Number of Children &amp; Location</div>
+    <div class="chart-sub">Customers with no children and far location show highest spending</div>
+    <div class="chart-wrap"><canvas id="childrenLocation" height="55"></canvas></div>
+  </div>
+
+</div>
+
+<!-- ─────────────── Segment Table ─────────────── -->
+<div class="chart-card" style="margin-bottom:28px;">
+  <div class="chart-title">Segment Performance Summary</div>
+  <div class="chart-sub" style="margin-bottom:16px;">Key segments ranked by average spend with relative performance indicator</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Segment</th>
+          <th>Category</th>
+          <th>Customers (n)</th>
+          <th>Avg. Spend</th>
+          <th>Relative Performance</th>
+          <th>Tier</th>
+        </tr>
+      </thead>
+      <tbody id="segmentTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ─────────────── Actionable Insights ─────────────── -->
+<div class="insights-grid">
+  <div class="insight-card">
+    <div class="insight-icon green">🎯</div>
+    <div>
+      <div class="insight-title">Target High-History Customers First</div>
+      <div class="insight-body">Customers with a <strong>High</strong> purchase history spend an average of <strong>$2,186</strong> — 6× more than Low-history customers ($357). Prioritise retention and upsell campaigns for this cohort.</div>
+    </div>
+  </div>
+  <div class="insight-card">
+    <div class="insight-icon blue">📮</div>
+    <div>
+      <div class="insight-title">Increase Catalog Send Volume</div>
+      <div class="insight-body">Moving customers from 6 catalogs to 24 nearly <strong>triples average spend</strong> ($617 → $1,828). A/B test incremental catalog increases for cost-effective revenue growth.</div>
+    </div>
+  </div>
+  <div class="insight-card">
+    <div class="insight-icon yellow">💑</div>
+    <div>
+      <div class="insight-title">Married Homeowners Are Premium Segment</div>
+      <div class="insight-body">Married customers average <strong>$1,672</strong> vs $758 for single. Homeowners spend <strong>$1,543</strong> vs $869 for renters. Combined, this segment likely represents your highest LTV group.</div>
+    </div>
+  </div>
+  <div class="insight-card">
+    <div class="insight-icon cyan">💰</div>
+    <div>
+      <div class="insight-title">Salary Is a Strong Spend Predictor</div>
+      <div class="insight-body">Customers earning <strong>$100k+</strong> spend an average of $2,442 — 8× more than those earning under $20k ($302). Enrich CRM data with income signals for better prospect scoring.</div>
+    </div>
+  </div>
+  <div class="insight-card">
+    <div class="insight-icon red">📍</div>
+    <div>
+      <div class="insight-title">Far-Location Customers Outspend Close</div>
+      <div class="insight-body">Far-location customers average <strong>$1,596</strong> vs $1,062 for close. This may reflect fewer local alternatives — consider geo-targeted direct mail for distant zip codes.</div>
+    </div>
+  </div>
+  <div class="insight-card">
+    <div class="insight-icon green">👶</div>
+    <div>
+      <div class="insight-title">Re-engage Young &amp; High-Children Customers</div>
+      <div class="insight-body">Young customers average only <strong>$559</strong>. Customers with 3 children average <strong>$831</strong>. These cost-constrained groups need value-focused messaging and entry-level offers.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────── Footer ─────────────── -->
+<div class="footer">
+  <p>AnalyticsAdvantage &mdash; Week 1 Dashboard &nbsp;|&nbsp; Data source: direct_marketing.csv &nbsp;|&nbsp; Generated March 2026</p>
+</div>
+
+<!-- ─────────────── Charts JS ─────────────── -->
+<script>
+  Chart.defaults.color = '#94a3b8';
+  Chart.defaults.borderColor = '#2e3250';
+  Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+
+  const INDIGO  = '#6366f1';
+  const CYAN    = '#22d3ee';
+  const AMBER   = '#f59e0b';
+  const GREEN   = '#34d399';
+  const RED     = '#f87171';
+  const PURPLE  = '#a78bfa';
+  const PINK    = '#f472b6';
+  const TEAL    = '#2dd4bf';
+
+  const surfaceColor  = '#1a1d27';
+  const surface2Color = '#22263a';
+
+  /* ── 1. Spending Distribution ── */
+  new Chart(document.getElementById('spendDist'), {
+    type: 'bar',
+    data: {
+      labels: ['$0–$499', '$500–$999', '$1,000–$1,999', '$2,000–$2,999', '$3,000–$4,999', '$5,000+'],
+      datasets: [{
+        label: 'Customers',
+        data: [257, 262, 300, 125, 49, 7],
+        backgroundColor: [RED, AMBER, INDIGO, CYAN, GREEN, PURPLE],
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.raw} customers` } }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: '#2e3250' }, ticks: { stepSize: 50 } }
+      }
+    }
+  });
+
+  /* ── 2. Age Pie ── */
+  new Chart(document.getElementById('agePie'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Middle (508)', 'Young (287)', 'Old (205)'],
+      datasets: [{
+        data: [508, 287, 205],
+        backgroundColor: [INDIGO, CYAN, AMBER],
+        borderColor: surfaceColor,
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } }
+      }
+    }
+  });
+
+  /* ── 3. Age Spend ── */
+  new Chart(document.getElementById('ageSpend'), {
+    type: 'bar',
+    data: {
+      labels: ['Young', 'Old', 'Middle'],
+      datasets: [{
+        label: 'Avg Spend ($)',
+        data: [559, 1432, 1502],
+        backgroundColor: [RED, AMBER, GREEN],
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` $${ctx.raw.toLocaleString()}` } } },
+      scales: {
+        x: { grid: { color: '#2e3250' }, ticks: { callback: v => '$' + v.toLocaleString() } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+
+  /* ── 4. History Spend ── */
+  new Chart(document.getElementById('historySpend'), {
+    type: 'bar',
+    data: {
+      labels: ['Low', 'Medium', 'None', 'High'],
+      datasets: [{
+        label: 'Avg Spend ($)',
+        data: [357, 950, 1240, 2186],
+        backgroundColor: [RED, AMBER, CYAN, GREEN],
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` $${ctx.raw.toLocaleString()}` } } },
+      scales: {
+        x: { grid: { color: '#2e3250' }, ticks: { callback: v => '$' + v.toLocaleString() } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+
+  /* ── 5. Catalog Spend ── */
+  new Chart(document.getElementById('catalogSpend'), {
+    type: 'line',
+    data: {
+      labels: ['6 Catalogs', '12 Catalogs', '18 Catalogs', '24 Catalogs'],
+      datasets: [{
+        label: 'Avg Spend ($)',
+        data: [617, 1018, 1496, 1828],
+        borderColor: INDIGO,
+        backgroundColor: 'rgba(99,102,241,0.15)',
+        pointBackgroundColor: INDIGO,
+        pointRadius: 6,
+        fill: true,
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` $${ctx.raw.toLocaleString()}` } } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: '#2e3250' }, ticks: { callback: v => '$' + v.toLocaleString() } }
+      }
+    }
+  });
+
+  /* ── 6. Salary Spend ── */
+  new Chart(document.getElementById('salarySpend'), {
+    type: 'line',
+    data: {
+      labels: ['<$20k', '$20k–$39k', '$40k–$59k', '$60k–$79k', '$80k–$99k', '$100k+'],
+      datasets: [{
+        label: 'Avg Spend ($)',
+        data: [302, 616, 1068, 1514, 1969, 2442],
+        borderColor: CYAN,
+        backgroundColor: 'rgba(34,211,238,0.12)',
+        pointBackgroundColor: CYAN,
+        pointRadius: 6,
+        fill: true,
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` $${ctx.raw.toLocaleString()}` } } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: '#2e3250' }, ticks: { callback: v => '$' + v.toLocaleString() } }
+      }
+    }
+  });
+
+  /* ── 7. Gender ── */
+  new Chart(document.getElementById('genderSpend'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Male ($1,413)', 'Female ($1,025)'],
+      datasets: [{
+        data: [1413, 1025],
+        backgroundColor: [INDIGO, PINK],
+        borderColor: surfaceColor,
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } } }
+    }
+  });
+
+  /* ── 8. Married ── */
+  new Chart(document.getElementById('marriedSpend'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Married ($1,672)', 'Single ($758)'],
+      datasets: [{
+        data: [1672, 758],
+        backgroundColor: [GREEN, AMBER],
+        borderColor: surfaceColor,
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } } }
+    }
+  });
+
+  /* ── 9. Home ── */
+  new Chart(document.getElementById('homeSpend'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Own ($1,543)', 'Rent ($869)'],
+      datasets: [{
+        data: [1543, 869],
+        backgroundColor: [TEAL, RED],
+        borderColor: surfaceColor,
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } } }
+    }
+  });
+
+  /* ── 10. Children × Location ── */
+  new Chart(document.getElementById('childrenLocation'), {
+    type: 'bar',
+    data: {
+      labels: ['0 Children', '1 Child', '2 Children', '3 Children'],
+      datasets: [
+        {
+          label: 'Close',
+          data: [1193, 1022, 821, 700],
+          backgroundColor: INDIGO,
+          borderRadius: 4,
+        },
+        {
+          label: 'Far',
+          data: [1705, 1601, 1175, 1080],
+          backgroundColor: CYAN,
+          borderRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.raw.toLocaleString()}` } }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: '#2e3250' }, ticks: { callback: v => '$' + v.toLocaleString() } }
+      }
+    }
+  });
+
+  /* ── Segment Table ── */
+  const segments = [
+    { segment: 'High History',   category: 'Purchase History', n: 255,  avg: 2186, max: 2186 },
+    { segment: '$100k+ Salary',  category: 'Salary Band',      n: 98,   avg: 2442, max: 2442 },
+    { segment: 'Married',        category: 'Marital Status',   n: 502,  avg: 1672, max: 1672 },
+    { segment: '24 Catalogs',    category: 'Catalog Volume',   n: 233,  avg: 1828, max: 1828 },
+    { segment: 'Far Location',   category: 'Location',         n: 290,  avg: 1596, max: 1596 },
+    { segment: 'Homeowner',      category: 'Home Ownership',   n: 516,  avg: 1543, max: 1543 },
+    { segment: 'Middle Age',     category: 'Age Group',        n: 508,  avg: 1502, max: 1502 },
+    { segment: 'Male',           category: 'Gender',           n: 494,  avg: 1413, max: 1413 },
+    { segment: 'No Children',    category: 'Children',         n: 462,  avg: 1407, max: 1407 },
+    { segment: 'Medium History', category: 'Purchase History', n: 212,  avg: 950,  max: 950  },
+    { segment: 'Female',         category: 'Gender',           n: 506,  avg: 1025, max: 1025 },
+    { segment: 'Renter',         category: 'Home Ownership',   n: 484,  avg: 869,  max: 869  },
+    { segment: 'Young',          category: 'Age Group',        n: 287,  avg: 559,  max: 559  },
+    { segment: 'Low History',    category: 'Purchase History', n: 230,  avg: 357,  max: 357  },
+  ];
+
+  const maxAvg = Math.max(...segments.map(s => s.avg));
+  const tbody = document.getElementById('segmentTable');
+  segments.forEach(s => {
+    const pct = Math.round((s.avg / maxAvg) * 100);
+    let tier, tierClass;
+    if (s.avg >= 1500)      { tier = 'High';   tierClass = 'high';   }
+    else if (s.avg >= 900)  { tier = 'Medium'; tierClass = 'medium'; }
+    else                    { tier = 'Low';    tierClass = 'low';    }
+
+    tbody.innerHTML += `
+      <tr>
+        <td><strong>${s.segment}</strong></td>
+        <td style="color:var(--muted)">${s.category}</td>
+        <td>${s.n.toLocaleString()}</td>
+        <td><strong>$${s.avg.toLocaleString()}</strong></td>
+        <td style="width:160px">
+          <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <span style="font-size:0.7rem;color:var(--muted)">${pct}% of top</span>
+        </td>
+        <td><span class="pill ${tierClass}">${tier}</span></td>
+      </tr>`;
+  });
+</script>
+</body>
+</html>
